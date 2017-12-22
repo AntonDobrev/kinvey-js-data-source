@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8" />
+      <title>Kendo UI Snippet</title>
+      <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2017.2.621/styles/kendo.common.min.css" />
+      <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2017.2.621/styles/kendo.rtl.min.css" />
+      <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2017.2.621/styles/kendo.silver.min.css" />
+      <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2017.2.621/styles/kendo.mobile.all.min.css" />
+      <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+      <script src="https://kendo.cdn.telerik.com/2017.2.621/js/kendo.all.min.js"></script>
+      <script src="https://da189i1jfloii.cloudfront.net/js/kinvey-phonegap-sdk-3.9.3.min.js"></script>
+      <script src="kendo.data.kinvey.js"></script>
+   </head>
+   <body>
+      <div id="grid"></div>
+      <script>
+         const kinveyAppKey = "appkey";
+         const kinveyAppSecret = "appsecret";
+         
+         const email = "username";
+         const password = "password";
+         
+         Kinvey.init({
+             appKey: kinveyAppKey,
+             appSecret: kinveyAppSecret
+         });
+         
+         var collectionName = "books";
+        
+         var dataStore = Kinvey.DataStore.collection(collectionName, Kinvey.DataStoreType.Network); 
+         // TODO: possible bug in the Cache store when you've created an item and subsequent saves are stating -  "data is being pushed to the backend"
+         
+         var activeUser = Kinvey.User.getActiveUser();
+         if (activeUser !== null) {
+             activeUser.me().then(function (activeUser) {
+                 successHandler(activeUser);
+             }, function (err) {
+                 if (err.name = "InvalidCredentials") {
+                     // we have an active user but its crerdentials are invalid or expired and we need to remove the active user
+                     Kinvey.User.logout()
+                         .then(function () {
+                             // ...
+                         }).catch(function (error) {
+                             // ...
+                         });
+                 }
+                 // 
+                 init();
+             });
+         } else {
+             alert("No active user, please sign in");
+         
+             Kinvey.User.login({
+                 username: email,
+                 password: password
+             })
+                 .then(function (user) {
+                     successHandler(user);
+                 }, function (err) {
+         
+                     alert(JSON.stringify(err));
+                     init();
+                 })
+                 .catch(function (error) {
+                     // ...
+                     init();
+                 });
+         }
+         
+         var dataSourceOptions = {
+             type: "kinvey",
+             transport: {
+                // typeName: collectionName
+                 dataStore: dataStore
+             },
+             schema: {
+                 model: {
+                     id: "_id"
+                 }
+             },
+             error: function (err) {
+                 alert(JSON.stringify(err));
+             },
+             serverPaging: true,
+             pageSize: 37,
+             serverFiltering: true,
+             filter: {
+                 field: "author", operator: "eq", value: "FD"
+                 // logic: "or",
+                 // filters: [{
+                 //     field: "author",
+                 //     operator: "neq",
+                 //     value: "f"
+                 // },
+                 // {
+                 //     field: "title",
+                 //     operator: "neq",
+                 //     value: "shm"
+                 // }
+                 // ]
+             },
+             serverSorting: true,
+             sort: {
+                 field: "title",
+                 dir: "asc"
+             }
+         };
+         
+         var dataSource = new kendo.data.DataSource(dataSourceOptions);
+         
+         function init() {
+             alert("You should init the app again");
+         }
+         
+         function successHandler() {
+         $("#grid").kendoGrid({
+             remove: function (e) {
+                 _id = e.model._id
+             },
+             save: function (e) {
+                 _id = e.model._id
+             },
+             toolbar: ["create"],
+             dataSource: dataSource,
+             editable: "inline",
+             sortable: true,
+             filterable: true,
+             pageable: true,
+             columns: [{
+                 field: "title",
+                 title: "Title"
+             }, {
+                 field: "author",
+                 title: "Author",
+                 width: "120px"
+             }, {
+                 field: "isbn",
+                 title: "ISBN",
+                 width: "120px"
+             }, {
+                 field: "review",
+                 width: "220px"
+             },
+             {
+                 command: ["edit", "destroy"],
+                 title: "&nbsp;",
+                 width: "250px"
+             }
+             ]
+         });
+         }
+      </script>
+   </body>
+</html>

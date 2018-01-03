@@ -23,17 +23,13 @@
         return;
     }
 
-    var $ = window.jQuery;
-    var kendo = window.kendo;
-
-    var extend = $.extend;
-    var aggrSeparator = '_';
+    var $ = window.jQuery,
+    kendo = window.kendo,
+    extend = $.extend,
+    total = null; 
 
     var kinveyTransport = kendo.data.RemoteTransport.extend({
         init: function (options) {
-            //  this.everlive$ = options.dataProvider || Everlive.$;
-
-            //  this._subscribeToSdkEvents(options);
             if (!Kinvey) {
                 throw new Error(ERROR_MESSAGES.NoKinveyInstanceMessage);
             }
@@ -46,17 +42,25 @@
 
             kendo.data.RemoteTransport.fn.init.call(this, options);
         },
-        _crud: function(options, type) {
-            var data = this.parameterMap(options.data, type);
+        _setTotal: function(options, type, query) {
+            var data = this.parameterMap(options.data, type); // TODO
 
-            this.dataStore.count().subscribe(function(totalItemsCount){
-
+          // if(query){
+            this.dataStore.count(query).subscribe(function(totalItemsCount){
+                total = totalItemsCount;
     }, function(){
         throw new Error("Could not retrieve count");
     })
-            return "_in crud";
         },
-
+        // total: function() {
+        //         var count = 0;
+        //         this.dataStore.count().subscribe(function(totalItemsCount){
+        //             count = totalItemsCount;
+        //         }, function(){
+        //             throw new Error("Could not retrieve count");
+        //         })
+                    
+        //     },
         read: function (options) {
             var methodOption = this.options['read'];
             var self = this;
@@ -64,9 +68,15 @@
                 return kendo.data.RemoteTransport.fn.read.call(this, options);
             }
 
-           self._crud(options, "read");
+          
+        
             var queryOptions = translateKendoQuery(options.data);
             var query = new Kinvey.Query(queryOptions);
+
+             if(options.data.skip >= 0 || options.data.take >= 0){ // TODO - options.data may not exist
+                var countQuery = new Kinvey.Query(queryOptions.filter);
+                 self._setTotal(options, "read", query);
+            }
 
             // TODO ???? do we need this
             // var id = options.data.Id;
@@ -83,17 +93,10 @@
 
             var stream = this.dataStore.find(query);
             stream.subscribe(function onNext(entities) {
-
                 options.success(entities);
-
             }, function onError(err) {
-
                 options.error(err);
-
-
             }, function onComplete(completed) {
-
-                console.log("Find completed");
             });
 
         },
@@ -153,31 +156,33 @@
             return this.dataStore.removeById(options.data._id)
                 .then(options.success, options.error).catch(options.error);
         },
-        // parameterMap: function(options, type) {
-        //     var result = kendo.data.transports.kinvey.parameterMap(options, type, true);
+        parameterMap: function(options, type) {
+            var result = kendo.data.transports.kinvey.parameterMap(options, type, true);
 
-        //     return result;
-        // }
+            return result;
+        }
     });
 
     
     extend(true, kendo.data, {
         transports: {
             kinvey: kinveyTransport
-        },
+         },
         schemas: {
             kinvey: {
                 type: 'json',
-                // total: function (data) {
-                //     return data.hasOwnProperty('count') ? data.count : data.Count;
-                // },
+                total: function (data) {
+                   return total ? total : data.length;
+                },
                 data: function (data) {
                     return data || Everlive._traverseAndRevive(data) || data; // TODO
+                },
+                parse: function(response){
+                    return response;
                 },
                 model: {
                     id: CONSTANTS.idField
                 }
-           //     aggregates: 'aggregates'
             }
         }
     });
@@ -213,7 +218,7 @@
             if (data.sort) {
                 var sortExpressions = data.sort;
                 var sort = {};
-                if (!$.isArray(sortExpressions)) {
+                if (!Array.isArray(sortExpressions)) {
                     sortExpressions = [sortExpressions];
                 }
                 $.each(sortExpressions, function (idx, value) {
@@ -293,21 +298,11 @@
                                 "$regex": curretKendoFilterValue + "$"
                             }
                             break;
-                        case "contains":
-                            // not supported 
-                            currentKinveyFilter[currentKendoFilterFieldName] = {
-                                "$regex": curretKendoFilterValue
-                                //             "$options": "i" ONly case-sensitive
-                            }
-                            break;
-
                         default:
                             throw new Error("Unsupported filtering operator: " + currentKendoFilterOperator);
                             break;
                     }
-
                     kinveyFiltersArray.push(currentKinveyFilter);
-
                 }
 
                 var kinveyFilterOptions = {};
@@ -321,181 +316,4 @@
         }
         return result;
     }
-
-    var regexOperations = ['startswith', 'startsWith', 'endswith', 'endsWith', 'contains'];
-
-    var filterBuilder = {
-        build: function (filter) {
-            return filterBuilder._build(filter);
-        },
-        _build: function (filter) {
-            if (filterBuilder._isRaw(filter)) {
-                return filterBuilder._raw(filter);
-            }
-            else if (filterBuilder._isSimple(filter)) {
-                return filterBuilder._simple(filter);
-            }
-            else if (filterBuilder._isRegex(filter)) {
-                return filterBuilder._regex(filter);
-            }
-            else if (filterBuilder._isAnd(filter)) {
-                return filterBuilder._and(filter);
-            }
-            else if (filterBuilder._isOr(filter)) {
-                return filterBuilder._or(filter);
-            }
-        },
-        _isRaw: function (filter) {
-            return filter.operator === '_raw';
-        },
-        _raw: function (filter) {
-            var fieldTerm = {};
-            fieldTerm[filter.field] = filter.value;
-            return fieldTerm;
-        },
-        _isSimple: function (filter) {
-            return typeof filter.logic === 'undefined' && !filterBuilder._isRegex(filter);
-        },
-        _simple: function (filter) {
-            var term = {}, fieldTerm = {};
-            var operator = filterBuilder._translateoperator(filter.operator);
-            if (operator) {
-                term[operator] = filter.value;
-            }
-            else {
-                term = filter.value;
-            }
-            fieldTerm[filter.field] = term;
-            return fieldTerm;
-        },
-        _isRegex: function (filter) {
-            return $.inArray(filter.operator, regexOperations) !== -1;
-        },
-        _regex: function (filter) {
-            var fieldTerm = {};
-            var regex = filterBuilder._getRegex(filter);
-            fieldTerm[filter.field] = filterBuilder._getRegexValue(regex);
-            return fieldTerm;
-        },
-        _getRegex: function (filter) {
-            var pattern = filter.value;
-            var filterOperator = filter.operator;
-            switch (filterOperator) {
-                case 'contains':
-                    return new RegExp(".*" + pattern + ".*", "i");
-                case 'startsWith': // removing the camel case operators will be a breaking change
-                case 'startswith': // the Kendo UI operators are in lower case
-                    return new RegExp("^" + pattern, "i");
-                case 'endsWith':
-                case 'endswith':
-                    return new RegExp(pattern + '$', 'i');
-            }
-            throw new Error('Unknown operator type.');
-        },
-        _getRegexValue: function (regex) {
-            return QueryBuilder.prototype._getRegexValue.call(this, regex);
-        },
-        _isAnd: function (filter) {
-            return filter.logic === 'and';
-        },
-        _and: function (filter) {
-            var i, l, term, result = { $and: [] };
-            var operands = filter.filters;
-            for (i = 0, l = operands.length; i < l; i++) {
-                term = filterBuilder._build(operands[i]);
-                result.$and.push(term);
-            }
-            return result;
-        },
-        _isOr: function (filter) {
-            return filter.logic === 'or';
-        },
-        _or: function (filter) {
-            var i, l, term, result = [];
-            var operands = filter.filters;
-            for (i = 0, l = operands.length; i < l; i++) {
-                term = filterBuilder._build(operands[i]);
-                result.push(term);
-            }
-            return { $or: result };
-        },
-        _translateoperator: function (operator) {
-            switch (operator) {
-                case 'eq':
-                    return null;
-                case 'neq':
-                    return '$ne';
-                case 'gt':
-                    return '$gt';
-                case 'lt':
-                    return '$lt';
-                case 'gte':
-                    return '$gte';
-                case 'lte':
-                    return '$lte';
-            }
-            throw new Error('Unknown operator type.');
-        }
-    };
-
-    // /**
-    //  * Get a Kendo UI DataSource that is attached to the current instance of the SDK with default options.
-    //  * @method getKendoDataSource
-    //  * @memberOf Everlive.prototype
-    //  * @param {String} typeName The corresponding type name for the DataSource.
-    //  * @param {Object} [options] Additional DataSource options.
-    //  * @returns {DataSource}
-    //  */
-    // var _getKendoDataSource = function (typeName, dataStore, options) {
-    //     options = options || {};
-    //     // TODO - check for Kinvey options here
-    //     // var everlive$ = options.dataProvider || Everlive.$;
-    //     // if (!everlive$) {
-    //     //     throw new Error('You need to instantiate an Everlive instance in order to create a Kendo UI DataSource.');
-    //     // }
-    //     // if (!typeName) {
-    //     //     throw new Error("You need to specify a 'typeName' in order to create a Kendo UI DataSource.");
-    //     // }
-    //     if (options.serverGrouping) {
-    //         throw new Error("serverGrouping is not supported.");
-    //     }
-    //     if (options.serverAggregates) {
-    //         throw new Error("The serverAggregates option is not supported");
-    //     }
-
-    //     // TODO - Add a parameter for the dataStore instance here - check this and in createDataSource
-    //     var defaultKinveyOptions = {
-    //         type: 'kinvey',
-    //         transport: {
-    //             typeName: typeName,
-    //             dataStore: dataStore
-    //         }
-    //     };
-
-    //     //  var options = _.defaults(defaultEverliveOptions, options); // TODO
-    //     var dataSourceOptions = Object.assign(defaultKinveyOptions, options); 
-
-    //     return new kendo.data.DataSource(dataSourceOptions);
-    // };
-
-    // /**
-    //  * Creates a new Kendo UI [DataSource](http://docs.telerik.com/kendo-ui/api/javascript/data/datasource) that manages a certain Backend Services content type.
-    //  * Kendo UI [DataSource](http://docs.telerik.com/kendo-ui/api/javascript/data/datasource) is used in conjunction with other Kendo UI widgets (such as [ListView](http://docs.telerik.com/kendo-ui/web/listview/overview) and [Grid](http://docs.telerik.com/kendo-ui/web/grid/overview)) to provide an easy way to render data from Backend Services.
-    //  * *including Kendo UI scripts is required*.
-    //  * @param options data source options. See the Kendo UI documentation for [DataSource](http://docs.telerik.com/kendo-ui/api/javascript/data/datasource) for more information.
-    //  * @param options.transport.typeName The collection name in Kinvey that will be managed.
-    //  * @param options.transport.dataStore An instance of a [DataStore](https://devcenter.kinvey.com/phonegap/guides/datastore#SpecifyDataStoreType) that will be used by the data source 
-    //  * @returns {DataSource} A new instance of Kendo UI DataSource. See the Kendo UI documentation for [DataSource](http://docs.telerik.com/kendo-ui/api/javascript/data/datasource) for more information.
-    //  * @example ```js
-    //  * var booksDataSource = Everlive.createDataSource({
-    //      *   transport: {
-    //      *     typeName: 'Books'
-    //      *   }
-    //      * });
-    //  * ```
-    //  */
-    // var createDataSource = function (options) {
-    //     options = options || {};
-    //     return _getKendoDataSource(options.typeName, options.dataStore, options);
-    // };
 }());

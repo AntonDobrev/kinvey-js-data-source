@@ -5,10 +5,9 @@
     // count
     // offline?
     // backendInstance - n/a
-    // "contains" - n/a
     // serverPagination with 10 000 items?
     // support Cache and Sync stores
-    // TODO - Add a parameter for the dataStore instance here
+    // replace throw new error with options.error()
 
     var ERROR_MESSAGES = {
         "NoKinveyInstanceMessage": "An instance of the Kinvey JavaScript SDK must be initialized",
@@ -24,9 +23,11 @@
     }
 
     var $ = window.jQuery,
-    kendo = window.kendo,
-    extend = $.extend,
-    total = null; 
+        kendo = window.kendo,
+        extend = $.extend,
+        each = $.each,
+        isArray = Array.isArray,
+        total = null;
 
     var kinveyTransport = kendo.data.RemoteTransport.extend({
         init: function (options) {
@@ -42,25 +43,6 @@
 
             kendo.data.RemoteTransport.fn.init.call(this, options);
         },
-        _setTotal: function(options, type, query) {
-            var data = this.parameterMap(options.data, type); // TODO
-
-          // if(query){
-            this.dataStore.count(query).subscribe(function(totalItemsCount){
-                total = totalItemsCount;
-    }, function(){
-        throw new Error("Could not retrieve count");
-    })
-        },
-        // total: function() {
-        //         var count = 0;
-        //         this.dataStore.count().subscribe(function(totalItemsCount){
-        //             count = totalItemsCount;
-        //         }, function(){
-        //             throw new Error("Could not retrieve count");
-        //         })
-                    
-        //     },
         read: function (options) {
             var methodOption = this.options['read'];
             var self = this;
@@ -68,14 +50,31 @@
                 return kendo.data.RemoteTransport.fn.read.call(this, options);
             }
 
-          
-        
-            var queryOptions = translateKendoQuery(options.data);
+            var queryOptions = {};
+            queryOptions = translateKendoQuery(options.data);
             var query = new Kinvey.Query(queryOptions);
 
-             if(options.data.skip >= 0 || options.data.take >= 0){ // TODO - options.data may not exist
-                var countQuery = new Kinvey.Query(queryOptions.filter);
-                 self._setTotal(options, "read", query);
+            if (options.data.skip >= 0 || options.data.take >= 0) {
+                var countQueryOptions = {};
+                countQueryOptions.filter = queryOptions.filter; // we need this to send only the filter to the server for the count query
+                var countQuery = new Kinvey.Query(countQueryOptions);
+
+                self.dataStore.count(countQuery).toPromise().then(function (totalItemsCount) {
+                    total = totalItemsCount;
+                    return self.dataStore.find(query).toPromise();
+                }).then(function onSuccess(entities) {
+                    options.success(entities);
+                }).catch(function onErr(err) {
+                    options.error(err);
+                });
+
+            } else {
+                self.dataStore.find(query).toPromise().
+                    then(function onSuccess(entities) {
+                        options.success(entities);
+                    }).catch(function onErr(err) {
+                        options.error(err);
+                    });
             }
 
             // TODO ???? do we need this
@@ -90,15 +89,6 @@
             //         })
             //         .then(options.success).catch(options.error);
             // }
-
-            var stream = this.dataStore.find(query);
-            stream.subscribe(function onNext(entities) {
-                options.success(entities);
-            }, function onError(err) {
-                options.error(err);
-            }, function onComplete(completed) {
-            });
-
         },
         update: function (options) {
             var methodOption = this.options['update'];
@@ -106,14 +96,18 @@
                 return kendo.data.RemoteTransport.fn.read.call(this, options);
             }
 
-            var isMultiple = Array.isArray(options.data.models);
+            var isMultiple = isArray(options.data.models);
             if (isMultiple) {
                 throw new Error('Batch update is not supported.');
             } else {
                 var itemForUpdate = options.data;
 
-                /// TODO ??? why hould we bind to itemForUpdate?
-                return this.dataStore.save(itemForUpdate).then(options.success.bind(this, itemForUpdate), options.error).catch(options.error);
+                this.dataStore.save(itemForUpdate).
+                    then(function onSuccess(updateResult) {
+                        options.success(updateResult);
+                    }).catch(function onErr(updateErr) {
+                        options.error(err);
+                    });
             }
         },
         create: function (options) {
@@ -121,22 +115,22 @@
             if (methodOption && methodOption.url) {
                 return kendo.data.RemoteTransport.fn.read.call(this, options);
             }
-           
-            var isMultiple = Array.isArray(options.data.models);
 
+            var isMultiple = isArray(options.data.models);
             if (isMultiple) {
                 throw new Error('Batch insert is not supported.');
             } else {
                 var createData = options.data;
-
                 // TODO - check with batch create and other options
                 if (!createData._id && createData._id === "") {
                     delete createData._id;
                 }
-
-                // TODO chech why at Create in the grid it suggests Update whether it should be suggesting "Create" - has something to do with the _id or the traverse and review function
                 // TODO - if I create an item and then update it - it is again created in the server???? BUG or perhaps only with the Cache store or was with the binding??
-                return this.dataStore.save(createData).then(options.success.bind(this, createData), options.error).catch(options.error);
+                this.dataStore.save(createData).then(function onSuccess(createResult) {
+                    options.success(createResult);
+                }).catch(function onErr(createError) {
+                    options.error(createError);
+                });
             }
         },
         destroy: function (options) {
@@ -148,59 +142,46 @@
             if (methodOption && methodOption.headers) {
                 methodHeaders = methodOption.headers;
             }
-            var isMultiple = Array.isArray(options.data.models);
+            var isMultiple = isArray(options.data.models);
             if (isMultiple) {
                 throw new Error('Batch destroy is not supported.');
             }
 
-            return this.dataStore.removeById(options.data._id)
-                .then(options.success, options.error).catch(options.error);
+            this.dataStore.removeById(options.data._id)
+                .then(function onSuccess(destroyResult) {
+                    options.success(destroyResult);
+                }).catch(function onErr(destroyError) {
+                    options.error(destroyError);
+                });
         },
-        parameterMap: function(options, type) {
+        parameterMap: function (options, type) {
             var result = kendo.data.transports.kinvey.parameterMap(options, type, true);
 
             return result;
         }
     });
 
-    
     extend(true, kendo.data, {
         transports: {
             kinvey: kinveyTransport
-         },
+        },
         schemas: {
             kinvey: {
                 type: 'json',
                 total: function (data) {
-                   return total ? total : data.length;
+                    return total ? total : data.length;
                 },
                 data: function (data) {
                     return data || Everlive._traverseAndRevive(data) || data; // TODO
                 },
-                parse: function(response){
-                    return response;
-                },
                 model: {
-                    id: CONSTANTS.idField
+                    id: CONSTANTS.idField // TODO - do we need the model here
                 }
             }
         }
     });
 
     function translateKendoQuery(data) {
-
-        /**
-   * Create an instance of the Query class.
-   *
-   * @param {Object} options Options
-   * @param {string[]} [options.fields=[]] Fields to select.
-   * @param {Object} [options.filter={}] MongoDB query.
-   * @param {Object} [options.sort={}] The sorting order.
-   * @param {?number} [options.limit=null] Number of entities to select.
-   * @param {number} [options.skip=0] Number of entities to skip from the start.
-   * @return {Query} The query.
-   */
-
         var result = {};
         if (data) {
             if (data.skip) {
@@ -218,21 +199,18 @@
             if (data.sort) {
                 var sortExpressions = data.sort;
                 var sort = {};
-                if (!Array.isArray(sortExpressions)) {
+                if (!isArray(sortExpressions)) {
                     sortExpressions = [sortExpressions];
                 }
-                $.each(sortExpressions, function (idx, value) {
+                each(sortExpressions, function (idx, value) {
                     sort[value.field] = value.dir === 'asc' ? 1 : -1;
                 });
                 result.sort = sort;
                 delete data.sort;
             }
-
             if (data.filter) {
                 var filterOptions = data.filter;
                 var kinveyFilterOptions = {};
-
-
                 var logicalOperator = filterOptions.logic;
 
                 var kendoFiltersArray = filterOptions.filters;
@@ -281,7 +259,6 @@
                                 "$lte": curretKendoFilterValue
                             }
                             break;
-
                         case "gte":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
                                 "$gte": curretKendoFilterValue

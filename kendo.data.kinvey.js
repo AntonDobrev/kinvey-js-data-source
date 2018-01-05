@@ -8,7 +8,7 @@
     // serverPagination with 10 000 items?
     // support Cache and Sync stores
     // replace throw new error with options.error()
-
+    // only timeout option? - https://devcenter.kinvey.com/phonegap/guides/datastore#SpecifyDataStoreType 
     var ERROR_MESSAGES = {
         "NoKinveyInstanceMessage": "An instance of the Kinvey JavaScript SDK must be initialized",
         "NoDataStoreCollectionNameMessage": "'A collection name or a data store instance must be provided.'"
@@ -27,7 +27,8 @@
         extend = $.extend,
         each = $.each,
         isArray = Array.isArray,
-        total = null;
+        total = null,
+        shouldRefreshCount = false;
 
     var kinveyTransport = kendo.data.RemoteTransport.extend({
         init: function (options) {
@@ -54,13 +55,15 @@
             queryOptions = translateKendoQuery(options.data);
             var query = new Kinvey.Query(queryOptions);
 
-            if (options.data.skip >= 0 || options.data.take >= 0) {
+            if (options.data.skip >= 0 || options.data.take >= 0 || shouldRefreshCount) {
                 var countQueryOptions = {};
                 countQueryOptions.filter = queryOptions.filter; // we need this to send only the filter to the server for the count query
                 var countQuery = new Kinvey.Query(countQueryOptions);
 
                 self.dataStore.count(countQuery).toPromise().then(function (totalItemsCount) {
                     total = totalItemsCount;
+
+                    shouldRefreshCount = false;
                     return self.dataStore.find(query).toPromise();
                 }).then(function onSuccess(entities) {
                     options.success(entities);
@@ -127,6 +130,7 @@
                 }
                 // TODO - if I create an item and then update it - it is again created in the server???? BUG or perhaps only with the Cache store or was with the binding??
                 this.dataStore.save(createData).then(function onSuccess(createResult) {
+                    shouldRefreshCount = true;
                     options.success(createResult);
                 }).catch(function onErr(createError) {
                     options.error(createError);
@@ -149,6 +153,7 @@
 
             this.dataStore.removeById(options.data._id)
                 .then(function onSuccess(destroyResult) {
+                    shouldRefreshCount = true;
                     options.success(destroyResult);
                 }).catch(function onErr(destroyError) {
                     options.error(destroyError);

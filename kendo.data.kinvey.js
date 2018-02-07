@@ -1,24 +1,19 @@
 (function () {
-    'use strict';
+    "use strict";
 
-    // TODO
-    // count
-    // offline?
-    // backendInstance - n/a
-    // serverPagination with 10 000 items?
-    // support Cache and Sync stores
-    // replace throw new error with options.error()
-    // only timeout option? - https://devcenter.kinvey.com/phonegap/guides/datastore#SpecifyDataStoreType 
     var ERROR_MESSAGES = {
         "NoKinveyInstanceMessage": "An instance of the Kinvey JavaScript SDK must be initialized",
-        "NoDataStoreCollectionNameMessage": "'A collection name or a data store instance must be provided.'"
-    }
+        "NoDataStoreCollectionNameMessage": "'A collection name or a data store instance must be provided.'",
+        "BatchCreateNotSupportedMessage": "Batch create is not supported. Set the data source 'batch' option to 'false'.",
+        "BatchUpdateNotSupportedMessage": "Batch update is not supported. Set the data source 'batch' option to 'false'.",
+        "BatchDeleteNotSupportedMessage": "Batch delete is not supported. Set the data source 'batch' option to 'false'."
+    };
 
     var CONSTANTS = {
         idField: "_id"
-    }
+    };
 
-    if (typeof window !== 'undefined' && typeof window.jQuery === 'undefined' || typeof window.kendo === 'undefined' || !window.kendo.data) {
+    if ((typeof window !== typeof undefined && typeof window.jQuery === typeof undefined) || (typeof window.kendo === typeof undefined || !window.kendo.data)) {
         return;
     }
 
@@ -45,7 +40,7 @@
             kendo.data.RemoteTransport.fn.init.call(this, options);
         },
         read: function (options) {
-            var methodOption = this.options['read'];
+            var methodOption = this.options.read;
             var self = this;
             if (methodOption && methodOption.url) {
                 return kendo.data.RemoteTransport.fn.read.call(this, options);
@@ -94,14 +89,15 @@
             // }
         },
         update: function (options) {
-            var methodOption = this.options['update'];
+            var methodOption = this.options.update;
             if (methodOption && methodOption.url) {
                 return kendo.data.RemoteTransport.fn.read.call(this, options);
             }
 
             var isMultiple = isArray(options.data.models);
             if (isMultiple) {
-                throw new Error('Batch update is not supported.');
+                var batchUpdateUnsupportedError = new Error(ERROR_MESSAGES.BatchUpdateNotSupportedMessage);
+                options.error(batchUpdateUnsupportedError);
             } else {
                 var itemForUpdate = options.data;
 
@@ -114,14 +110,15 @@
             }
         },
         create: function (options) {
-            var methodOption = this.options['create'];
+            var methodOption = this.options.create;
             if (methodOption && methodOption.url) {
                 return kendo.data.RemoteTransport.fn.read.call(this, options);
             }
 
             var isMultiple = isArray(options.data.models);
             if (isMultiple) {
-                throw new Error('Batch insert is not supported.');
+                var batchCreateUnsupportedError = new Error(ERROR_MESSAGES.batchCreateUnsupportedError);
+                options.error(batchCreateUnsupportedError);
             } else {
                 var createData = options.data;
                 // TODO - check with batch create and other options
@@ -138,7 +135,7 @@
             }
         },
         destroy: function (options) {
-            var methodOption = this.options['destroy'];
+            var methodOption = this.options.destroy;
             if (methodOption && methodOption.url) {
                 return kendo.data.RemoteTransport.fn.read.call(this, options);
             }
@@ -148,7 +145,8 @@
             }
             var isMultiple = isArray(options.data.models);
             if (isMultiple) {
-                throw new Error('Batch destroy is not supported.');
+                var batchDeleteUnsupportedError = new Error(ERROR_MESSAGES.BatchDeleteNotSupportedMessage);
+                options.error(batchDeleteUnsupportedError);
             }
 
             this.dataStore.removeById(options.data._id)
@@ -172,7 +170,7 @@
         },
         schemas: {
             kinvey: {
-                type: 'json',
+                type: "json:",
                 total: function (data) {
                     return total ? total : data.length;
                 },
@@ -221,68 +219,72 @@
                 var kendoFiltersArray = filterOptions.filters;
                 var kinveyFiltersArray = [];
 
-                var i, loopCount = kendoFiltersArray.length;
+                var i, loopCount = kendoFiltersArray.length,
+                currentKendoFilter, 
+                currentKendoFilterOperator,
+                currentKendoFilterFieldName,
+                curretKendoFilterValue,
+                currentKinveyFilter;
 
                 for (i = 0; i < loopCount; i++) {
-                    var currentKendoFilter = kendoFiltersArray[i]; // {"field":"Author","operator":"eq","value":"FD"}
-                    var currentKendoFilterOperator = currentKendoFilter["operator"]; // "eq"
-                    var currentKendoFilterFieldName = currentKendoFilter.field;
-                    var curretKendoFilterValue = currentKendoFilter.value;
+                    currentKendoFilter = kendoFiltersArray[i];
+                    currentKendoFilterOperator = currentKendoFilter["operator"];
+                    currentKendoFilterFieldName = currentKendoFilter.field;
+                    curretKendoFilterValue = currentKendoFilter.value;
+                    currentKinveyFilter = {};
 
-                    var currentKinveyFilter = {};
                     switch (currentKendoFilterOperator) {
                         case "eq":
-                            currentKinveyFilter[currentKendoFilterFieldName] = curretKendoFilterValue
+                            currentKinveyFilter[currentKendoFilterFieldName] = curretKendoFilterValue;
                             break;
                         case "neq":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
                                 "$ne": curretKendoFilterValue
-                            }
+                            };
                             break;
                         case "isnull":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
                                 "$eq": null
-                            }
+                            };
                             break;
                         case "isnotnull":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
                                 "$ne": null
-                            }
+                            };
                             break;
                         case "lt":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
                                 "$lt": curretKendoFilterValue
-                            }
+                            };
                             break;
                         case "gt":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
                                 "$gt": curretKendoFilterValue
-                            }
+                            };
                             break;
                         case "lte":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
                                 "$lte": curretKendoFilterValue
-                            }
+                            };
                             break;
                         case "gte":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
                                 "$gte": curretKendoFilterValue
-                            }
+                            };
                             break;
                         case "startswith":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
                                 "$regex": "^" + curretKendoFilterValue
                                 //             "$options": "i" ONly case-sensitive
-                            }
+                            };
                             break;
                         case "endswith":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
                                 "$regex": curretKendoFilterValue + "$"
-                            }
+                            };
                             break;
                         default:
                             throw new Error("Unsupported filtering operator: " + currentKendoFilterOperator);
-                            break;
                     }
                     kinveyFiltersArray.push(currentKinveyFilter);
                 }
@@ -290,7 +292,7 @@
                 var kinveyFilterOptions = {};
                 var kinveyLogicalOperator = logicalOperator === "and" ? "$and" : "$or";
 
-                kinveyFilterOptions[kinveyLogicalOperator] = kinveyFiltersArray
+                kinveyFilterOptions[kinveyLogicalOperator] = kinveyFiltersArray;
 
                 delete data.filter;
                 result.filter = kinveyFilterOptions;

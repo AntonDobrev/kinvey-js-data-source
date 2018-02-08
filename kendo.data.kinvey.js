@@ -155,7 +155,7 @@
         },
         schemas: {
             kinvey: {
-                type: "json:",
+                type: "json",
                 total: function (data) {
                     return total ? total : data.length;
                 },

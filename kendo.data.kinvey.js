@@ -50,7 +50,7 @@
             queryOptions = translateKendoQuery(options.data);
             var query = new Kinvey.Query(queryOptions);
 
-            if (options.data.skip >= 0 || options.data.take >= 0 || shouldRefreshCount) {
+            if ((options.data.skip >= 0 || options.data.take >= 0) && shouldRefreshCount) {
                 var countQueryOptions = {};
                 countQueryOptions.filter = queryOptions.filter;
                 var countQuery = new Kinvey.Query(countQueryOptions);
@@ -82,8 +82,8 @@
 
             var isMultiple = isArray(options.data.models);
             if (isMultiple) {
-                var batchUpdateUnsupportedError = new Error(ERROR_MESSAGES.BatchUpdateNotSupportedMessage);
-                options.error(batchUpdateUnsupportedError);
+                var batchUpdateUnsupportedErrorMessage = ERROR_MESSAGES.BatchUpdateNotSupportedMessage;
+                options.error(batchUpdateUnsupportedErrorMessage);
             } else {
                 var itemForUpdate = options.data;
 
@@ -103,12 +103,11 @@
 
             var isMultiple = isArray(options.data.models);
             if (isMultiple) {
-                var batchCreateUnsupportedError = new Error(ERROR_MESSAGES.batchCreateUnsupportedError);
-                options.error(batchCreateUnsupportedError);
+                var batchCreateUnsupportedErrorMessage = ERROR_MESSAGES.BatchCreateNotSupportedMessage;
+                options.error(batchCreateUnsupportedErrorMessage);
             } else {
                 var createData = options.data;
-                // TODO - check with batch create and other options
-                if (!createData._id && createData._id === "") {
+                if (createData._id === "") {
                     delete createData._id;
                 }
 
@@ -131,8 +130,8 @@
             }
             var isMultiple = isArray(options.data.models);
             if (isMultiple) {
-                var batchDeleteUnsupportedError = new Error(ERROR_MESSAGES.BatchDeleteNotSupportedMessage);
-                options.error(batchDeleteUnsupportedError);
+                var batchDeleteUnsupportedErrorMessage = ERROR_MESSAGES.BatchDeleteNotSupportedMessage;
+                options.error(batchDeleteUnsupportedErrorMessage);
             }
 
             this.dataStore.removeById(options.data._id)
@@ -205,11 +204,11 @@
                 var kinveyFiltersArray = [];
 
                 var i, loopCount = kendoFiltersArray.length,
-                currentKendoFilter, 
-                currentKendoFilterOperator,
-                currentKendoFilterFieldName,
-                curretKendoFilterValue,
-                currentKinveyFilter;
+                    currentKendoFilter,
+                    currentKendoFilterOperator,
+                    currentKendoFilterFieldName,
+                    curretKendoFilterValue,
+                    currentKinveyFilter;
 
                 for (i = 0; i < loopCount; i++) {
                     currentKendoFilter = kendoFiltersArray[i];

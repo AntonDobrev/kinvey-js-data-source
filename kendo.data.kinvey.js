@@ -2,8 +2,8 @@
     "use strict";
 
     var ERROR_MESSAGES = {
-        "NoKinveyInstanceMessage": "An instance of the Kinvey JavaScript SDK must be initialized",
-        "NoDataStoreCollectionNameMessage": "'A collection name or a data store instance must be provided.'",
+        "NoKinveyInstanceMessage": "An instance of the Kinvey JavaScript SDK is not available. Initialize the Kinvey global object.",
+        "NoDataStoreCollectionNameMessage": "A collection name or a data store instance must be provided to the data source options.",
         "BatchCreateNotSupportedMessage": "Batch create is not supported. Set the data source 'batch' option to 'false'.",
         "BatchUpdateNotSupportedMessage": "Batch update is not supported. Set the data source 'batch' option to 'false'.",
         "BatchDeleteNotSupportedMessage": "Batch delete is not supported. Set the data source 'batch' option to 'false'."
@@ -52,18 +52,17 @@
 
             if (options.data.skip >= 0 || options.data.take >= 0 || shouldRefreshCount) {
                 var countQueryOptions = {};
-                countQueryOptions.filter = queryOptions.filter; // we need this to send only the filter to the server for the count query
+                countQueryOptions.filter = queryOptions.filter;
                 var countQuery = new Kinvey.Query(countQueryOptions);
 
                 self.dataStore.count(countQuery).toPromise().then(function (totalItemsCount) {
                     total = totalItemsCount;
-
                     shouldRefreshCount = false;
                     return self.dataStore.find(query).toPromise();
                 }).then(function onSuccess(entities) {
                     options.success(entities);
-                }).catch(function onErr(err) {
-                    options.error(err);
+                }).catch(function onErr(readError) {
+                    options.error(readError);
                 });
 
             } else {
@@ -74,19 +73,6 @@
                         options.error(err);
                     });
             }
-
-            // TODO ???? do we need this
-            // var id = options.data.Id;
-
-            // if (id) {
-            //     this.dataCollection.withHeaders(this.headers).withHeaders(methodHeaders).getById(id).then(options.success, options.error);
-            // } else {
-            //     this.dataCollection.withHeaders(this.headers).withHeaders(methodHeaders).get(everliveQuery)
-            //         .then(function (getResult) {
-            //             return self._readServAggregates(getResult, query, options, methodHeaders);
-            //         })
-            //         .then(options.success).catch(options.error);
-            // }
         },
         update: function (options) {
             var methodOption = this.options.update;
@@ -105,7 +91,7 @@
                     then(function onSuccess(updateResult) {
                         options.success(updateResult);
                     }).catch(function onErr(updateErr) {
-                        options.error(err);
+                        options.error(updateErr);
                     });
             }
         },
@@ -125,7 +111,7 @@
                 if (!createData._id && createData._id === "") {
                     delete createData._id;
                 }
-                // TODO - if I create an item and then update it - it is again created in the server???? BUG or perhaps only with the Cache store or was with the binding??
+
                 this.dataStore.save(createData).then(function onSuccess(createResult) {
                     shouldRefreshCount = true;
                     options.success(createResult);
@@ -159,7 +145,6 @@
         },
         parameterMap: function (options, type) {
             var result = kendo.data.transports.kinvey.parameterMap(options, type, true);
-
             return result;
         }
     });
@@ -175,10 +160,10 @@
                     return total ? total : data.length;
                 },
                 data: function (data) {
-                    return data || Everlive._traverseAndRevive(data) || data; // TODO
+                    return data;
                 },
                 model: {
-                    id: CONSTANTS.idField // TODO - do we need the model here
+                    id: CONSTANTS.idField
                 }
             }
         }
@@ -192,12 +177,12 @@
                 delete data.skip;
             }
             if (data.take) {
-                // optional - we only need the "limit" and "skip" modifiers
-                delete data.pageSize;
-                delete data.page;
-
                 result.limit = data.take;
                 delete data.take;
+
+                // we only need the "limit" and "skip" modifiers, "page" and "pageSize" are not required on the server
+                delete data.pageSize;
+                delete data.page;
             }
             if (data.sort) {
                 var sortExpressions = data.sort;
@@ -275,7 +260,6 @@
                         case "startswith":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
                                 "$regex": "^" + curretKendoFilterValue
-                                //             "$options": "i" ONly case-sensitive
                             };
                             break;
                         case "endswith":

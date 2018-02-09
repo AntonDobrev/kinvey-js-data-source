@@ -22,8 +22,7 @@
         extend = $.extend,
         each = $.each,
         isArray = Array.isArray,
-        total = null,
-        shouldRefreshCount = false;
+        total = null;
 
     var kinveyTransport = kendo.data.RemoteTransport.extend({
         init: function (options) {
@@ -39,38 +38,39 @@
 
             kendo.data.RemoteTransport.fn.init.call(this, options);
         },
-        read: function (options) {
+        read: function (readOptions) {
             var methodOption = this.options.read;
             var self = this;
             if (methodOption && methodOption.url) {
-                return kendo.data.RemoteTransport.fn.read.call(this, options);
+                return kendo.data.RemoteTransport.fn.read.call(this, readOptions);
             }
 
-            var queryOptions = {};
-            queryOptions = translateKendoQuery(options.data);
+            var queryOptions = translateKendoQueryToKinvey(readOptions.data);
             var query = new Kinvey.Query(queryOptions);
 
-            if ((options.data.skip >= 0 || options.data.take >= 0) && shouldRefreshCount) {
+            var isRequestingServerPaging = queryOptions.limit >= 0;
+            if (isRequestingServerPaging) {
                 var countQueryOptions = {};
-                countQueryOptions.filter = queryOptions.filter;
+                if (queryOptions.filter) {
+                    countQueryOptions.filter = queryOptions.filter;
+                }
                 var countQuery = new Kinvey.Query(countQueryOptions);
 
                 self.dataStore.count(countQuery).toPromise().then(function (totalItemsCount) {
                     total = totalItemsCount;
-                    shouldRefreshCount = false;
                     return self.dataStore.find(query).toPromise();
                 }).then(function onSuccess(entities) {
-                    options.success(entities);
+                    readOptions.success(entities);
                 }).catch(function onErr(readError) {
-                    options.error(readError);
-                });
+                    readOptions.error(readError); // e.error(response, status, error);
 
+                });
             } else {
                 self.dataStore.find(query).toPromise().
                     then(function onSuccess(entities) {
-                        options.success(entities);
+                        readOptions.success(entities);
                     }).catch(function onErr(err) {
-                        options.error(err);
+                        readOptions.error(err);
                     });
             }
         },
@@ -112,7 +112,6 @@
                 }
 
                 this.dataStore.save(createData).then(function onSuccess(createResult) {
-                    shouldRefreshCount = true;
                     options.success(createResult);
                 }).catch(function onErr(createError) {
                     options.error(createError);
@@ -136,7 +135,6 @@
 
             this.dataStore.removeById(options.data._id)
                 .then(function onSuccess(destroyResult) {
-                    shouldRefreshCount = true;
                     options.success(destroyResult);
                 }).catch(function onErr(destroyError) {
                     options.error(destroyError);
@@ -168,7 +166,7 @@
         }
     });
 
-    function translateKendoQuery(data) {
+    function translateKendoQueryToKinvey(data) {
         var result = {};
         if (data) {
             if (data.skip) {

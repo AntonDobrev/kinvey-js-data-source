@@ -205,23 +205,23 @@
                     currentKendoFilter,
                     currentKendoFilterOperator,
                     currentKendoFilterFieldName,
-                    curretKendoFilterValue,
+                    currentKendoFilterValue,
                     currentKinveyFilter;
 
                 for (i = 0; i < loopCount; i++) {
                     currentKendoFilter = kendoFiltersArray[i];
                     currentKendoFilterOperator = currentKendoFilter["operator"];
                     currentKendoFilterFieldName = currentKendoFilter.field;
-                    curretKendoFilterValue = currentKendoFilter.value;
+                    currentKendoFilterValue = currentKendoFilter.value;
                     currentKinveyFilter = {};
 
                     switch (currentKendoFilterOperator) {
                         case "eq":
-                            currentKinveyFilter[currentKendoFilterFieldName] = curretKendoFilterValue;
+                            currentKinveyFilter[currentKendoFilterFieldName] = currentKendoFilterValue;
                             break;
                         case "neq":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
-                                "$ne": curretKendoFilterValue
+                                "$ne": currentKendoFilterValue
                             };
                             break;
                         case "isnull":
@@ -236,32 +236,32 @@
                             break;
                         case "lt":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
-                                "$lt": curretKendoFilterValue
+                                "$lt": currentKendoFilterValue
                             };
                             break;
                         case "gt":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
-                                "$gt": curretKendoFilterValue
+                                "$gt": currentKendoFilterValue
                             };
                             break;
                         case "lte":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
-                                "$lte": curretKendoFilterValue
+                                "$lte": currentKendoFilterValue
                             };
                             break;
                         case "gte":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
-                                "$gte": curretKendoFilterValue
+                                "$gte": currentKendoFilterValue
                             };
                             break;
                         case "startswith":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
-                                "$regex": "^" + curretKendoFilterValue
+                                "$regex": "^" + currentKendoFilterValue
                             };
                             break;
                         case "endswith":
                             currentKinveyFilter[currentKendoFilterFieldName] = {
-                                "$regex": curretKendoFilterValue + "$"
+                                "$regex": currentKendoFilterValue + "$"
                             };
                             break;
                         default:

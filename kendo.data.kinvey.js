@@ -9,7 +9,7 @@
         "BatchDeleteNotSupportedMessage": "Batch delete is not supported. Set the data source 'batch' option to 'false'."
     };
 
-    var CONSTANTS = {
+    var KINVEY_DATA_SOURCE_CONSTANTS = {
         idField: "_id"
     };
 
@@ -160,7 +160,7 @@
                     return data;
                 },
                 model: {
-                    id: CONSTANTS.idField
+                    id: KINVEY_DATA_SOURCE_CONSTANTS.idField
                 }
             }
         }
@@ -169,7 +169,7 @@
     function translateKendoQueryToKinvey(data) {
         var result = {};
         if (data) {
-            if (data.skip) {
+            if (data.skip || data.skip === 0) {
                 result.skip = data.skip;
                 delete data.skip;
             }
@@ -264,6 +264,22 @@
                                 "$regex": currentKendoFilterValue + "$"
                             };
                             break;
+                        case "isin":
+                            if(!isArray(currentKendoFilterValue)) {
+                                currentKendoFilterValue = [currentKendoFilterValue]
+                            }
+                            currentKinveyFilter[currentKendoFilterFieldName] = {
+                                "$in": currentKendoFilterValue
+                            };
+                            break;
+                        case "isnotin":
+                            if(!isArray(currentKendoFilterValue)) {
+                                currentKendoFilterValue = [currentKendoFilterValue]
+                            }
+                            currentKinveyFilter[currentKendoFilterFieldName] = {
+                                "$nin": currentKendoFilterValue
+                            };
+                            break; 
                         default:
                             throw new Error("Unsupported filtering operator: " + currentKendoFilterOperator);
                     }

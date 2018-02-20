@@ -1,3 +1,10 @@
+/**
+ * kinvey-kendo-data-source - Kinvey extension of the Kendo UI for jQuery DataSource component.
+ * @version v0.0.1
+ * @author Kinvey, Inc.
+ * @link https://www.kinvey.com
+ * @license Apache-2.0
+ */
 (function () {
     "use strict";
 

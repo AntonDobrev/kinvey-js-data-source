@@ -190,6 +190,6 @@ The following configuration options of the `DataSource` component are not suppor
 ### License
 
 ```
-See [LICENSE](LICENSE) for details.
+See [LICENSE](LICENSE.md) for details.
 ```
 

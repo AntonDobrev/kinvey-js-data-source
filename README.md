@@ -14,13 +14,11 @@ The Kinvey flavour of the [Kendo UI DataSource](http://docs.telerik.com/kendo-ui
 
 You can choose between several ways of sourcing the Backend Services JavaScript SDK SDK files, including downloading a local copy or directly referencing an online copy.
 
-### Online Copy
+### <!--Online Copy-->
 
-For easy setup, you can directly reference the SDK from a Content Delivery Network (CDN).
+<!--For easy setup, you can directly reference the SDK from a Content Delivery Network (CDN).-->
 
-> For production apps, we recommend that you install a local copy of the package inside your application. Doing so ensures that the SDK will instantiate even without a network connection.
-
-????? Link here
+> <!--For production apps, we recommend that you install a local copy of the package inside your application. Doing so ensures that the SDK will instantiate even without a network connection.-->
 
 ### GitHub Repository
 
@@ -29,6 +27,8 @@ The source code of the component can be accessed in the following [GitHub reposi
 ## Adding References
 
 ```
+<!-- Other framework scripts (cordova.js, etc.)  -->
+
 <!-- Kendo UI Core / Kendo UI Professional -->
 <script src="kendo.all.min.js"></script>
 
@@ -78,17 +78,17 @@ var dataSource = new kendo.data.DataSource(dataSourceOptions);
 
 For advanced scenarios like caching or offlynce synchronization you will need to manage a Kinvey data store of type `Cache` or `Sync`. You can instruct the data source instance to work directly with such data store. You have to manage yourself the state of the store and `push`, `pull` and `sync` the entities to/from the server yourself in a suitable place of your application. The data source instance will only fetch the items that are available locally in the data store. 
 
-```JavaScript
+```javascript
 // initialize the data store 
 var booksSyncStore = Kinvey.DataStore.collection(collectionName, Kinvey.DataStoreType.Sync); 
  
-// pull and push items to/from the server 
+// pull and push items to/from the server in a suitable place in your code
 
-// initialize the data source with the 
+// initialize the data source with the dataStore option
 var dataSourceOptions = {
     type: "kinvey",
     transport: {
-        dataStore: booksSyncStore-
+        dataStore: booksSyncStore
     },
     schema: {
         model: {
@@ -114,10 +114,10 @@ The dialect supports a selected subset of the DataSource filter [configuration](
 - `"eq"`
 
 
--  `"neq"`
+- `"neq"`
 - `"isnull"`
 - `"isnotnull"`
--  `"lt"`
+- `"lt"`
 - `"gt"`
 - `"lte"`
 - `"gte"`
@@ -129,14 +129,22 @@ var dataSourceOptions ={
     type: 'kinvey',
     // ommitted for brevity
     serverFiltering: true,
-    filter: { field: 'Author', operator: 'eq', value: 'Lee' }
+    filter: { field: 'author', operator: 'eq', value: 'Lee' }
 }
 ```
 
 In addition to the standard Kendo UI Data Source filtering operatiors, this dialect adds support for the following Kinvey-specific operators:
 
 - `"isin"`&mdash;value is an array of possible matches. Ex: `{ field: 'author', operator: 'isin', value: ["Author1", "Author2", "Author3"] }`
-- `"isnotin"`&mdash;an inversion of the above logic returning all matches that are not in the specified array. 
+- `"isnotin"`&mdash;an inversion of the above logic returning all matches that are not in the specified array, including these entities that **do not** contain the specified field. 
+
+```javascript
+{
+    field: "author",
+    operator: "isin",
+    value: ["John Steinbeck", "Leo Tolstoy", "Gore Vidal"]
+}
+```
 
 ## Sorting
 
@@ -147,7 +155,7 @@ var dataSourceOptions = {
     type: 'kinvey',
     // ommitted for brevity
     serverSorting: true,
-    sort: { field: 'Author', dir: 'asc' }
+    sort: { field: 'author', dir: 'asc' }
 }
 ```
 
@@ -166,7 +174,7 @@ var dataSourceOptions = {
 };
 ```
 
-> When `serverPaging` is enabled, a separate request to determine the count of the entities on the server is made before requesting the respective page of entities from the server. 
+> When `serverPaging` is enabled, a separate request to determine the count of the entities on the server is made **before each request** for the respective page of entities to the server. 
 
 ### Unsupported Configuration Options
 
@@ -174,13 +182,14 @@ The following configuration options of the `DataSource` component are not suppor
 
 - [`batch`](http://docs.telerik.com/kendo-ui/api/framework/datasource#configuration-batch)
 - [`serverGrouping`](http://docs.telerik.com/kendo-ui/api/framework/datasource#configuration-serverGrouping)&mdash;you can use client-side grouping instead
-- Filter operators that are not supported for server filtering are: `contains`, `doesnotcontain`, `isempty`, `isnotempty`
+- The standard Kendo UI data source filter operators that are not supported for server filtering in the "kinvey" flavour are: `contains`, `doesnotcontain`, `isempty`, `isnotempty`
 - Specifying a subset of fields to be returned
 - Expand expressions
-- [`transport.parameterMap`](http://docs.telerik.com/kendo-ui/api/javascript/data/datasource#configuration-transport.parameterMap)&mdash;you can use the [beforeExecute]({% slug js-sdk-querying-events %}#beforeexecute) event instead to mimic the functionality
+- [`transport.parameterMap`](http://docs.telerik.com/kendo-ui/api/javascript/data/datasource#configuration-transport.parameterMap)
 
 ### License
 
 ```
 See [LICENSE](LICENSE) for details.
 ```
+

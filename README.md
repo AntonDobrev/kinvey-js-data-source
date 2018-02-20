@@ -180,12 +180,17 @@ var dataSourceOptions = {
 
 The following configuration options of the `DataSource` component are not supported for server execution in {{site.tap}}. By default, their value is set to `false`. This means that grouping and aggregation of data must be done client-side.
 
-- [`batch`](http://docs.telerik.com/kendo-ui/api/framework/datasource#configuration-batch)
-- [`serverGrouping`](http://docs.telerik.com/kendo-ui/api/framework/datasource#configuration-serverGrouping)&mdash;you can use client-side grouping instead
 - The standard Kendo UI data source filter operators that are not supported for server filtering in the "kinvey" flavour are: `contains`, `doesnotcontain`, `isempty`, `isnotempty`
 - Specifying a subset of fields to be returned
 - Expand expressions
+- [`schema`](https://docs.telerik.com/kendo-ui/api/javascript/data/datasource/configuration/schema)&mdash;`schema.aggregates` and `schema.groups` are not supported. The component already takes care of `schema.data`, `schema.total` and `schema.type` for you so you do not need to set them explicitly  
+- [`batch`](http://docs.telerik.com/kendo-ui/api/framework/datasource#configuration-batch)
+- [`serverGrouping`](http://docs.telerik.com/kendo-ui/api/framework/datasource#configuration-serverGrouping)&mdash;you can use client-side grouping instead
+- [`serverAggregates`](https://docs.telerik.com/kendo-ui/api/javascript/data/datasource/configuration/serveraggregates)&mdash;&mdash;you can use client-side aggregation instead or request the data from the [`_group`](https://devcenter.kinvey.com/rest/guides/datastore#aggregation) endpoint in Kinvey 
 - [`transport.parameterMap`](http://docs.telerik.com/kendo-ui/api/javascript/data/datasource#configuration-transport.parameterMap)
+- [`inPlaceSort`](https://docs.telerik.com/kendo-ui/api/javascript/data/datasource/configuration/inplacesort)&mdash;use the `serverSorting` option instead. 
+- [`offlineStorage`](https://docs.telerik.com/kendo-ui/api/javascript/data/datasource/configuration/offlinestorage)&mdash;instead initialize and work with a Kinvey DataStore of type `SYNC`. 
+- [`type`](https://docs.telerik.com/kendo-ui/api/javascript/data/datasource/configuration/type)&mdash;only the predefined for Kinvey `transport` and/or `schema` options are supported.  
 
 ### License
 

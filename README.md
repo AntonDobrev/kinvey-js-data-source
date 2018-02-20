@@ -183,6 +183,7 @@ The following configuration options of the `DataSource` component are not suppor
 - The standard Kendo UI data source filter operators that are not supported for server filtering in the "kinvey" flavour are: `contains`, `doesnotcontain`, `isempty`, `isnotempty`
 - Specifying a subset of fields to be returned
 - Expand expressions
+- Sending additional headers with the request
 - [`schema`](https://docs.telerik.com/kendo-ui/api/javascript/data/datasource/configuration/schema)&mdash;`schema.aggregates` and `schema.groups` are not supported. The component already takes care of `schema.data`, `schema.total` and `schema.type` for you so you do not need to set them explicitly  
 - [`batch`](http://docs.telerik.com/kendo-ui/api/framework/datasource#configuration-batch)
 - [`serverGrouping`](http://docs.telerik.com/kendo-ui/api/framework/datasource#configuration-serverGrouping)&mdash;you can use client-side grouping instead

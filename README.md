@@ -12,7 +12,7 @@ The Kinvey flavour of the [Kendo UI DataSource](http://docs.telerik.com/kendo-ui
 
 ## Sourcing the Component
 
-You can choose between several ways of sourcing the Backend Services JavaScript SDK SDK files, including downloading a local copy or directly referencing an online copy.
+You can choose between several ways of sourcing the data source, including downloading a local copy or directly referencing an online copy.
 
 ### <!--Online Copy-->
 
@@ -22,7 +22,7 @@ You can choose between several ways of sourcing the Backend Services JavaScript 
 
 ### GitHub Repository
 
-The source code of the component can be accessed in the following [GitHub repository](https://github.com/Kinvey/kinvey-kendo-data-source).
+The source code of the component can be accessed in the following [GitHub repository](https://github.com/Kinvey/kinvey-kendo-data-source). You can download a ZIP archive of the file from the [Releases](https://github.com/Kinvey/kinvey-kendo-data-source/releases) page.
 
 ## Adding References
 

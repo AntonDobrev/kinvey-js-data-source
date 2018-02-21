@@ -10,26 +10,25 @@
       <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
       <script src="https://kendo.cdn.telerik.com/2017.2.621/js/kendo.all.min.js"></script>
       <script src="https://da189i1jfloii.cloudfront.net/js/kinvey-phonegap-sdk-3.9.3.min.js"></script>
-      <script src="kendo.data.kinvey.js"></script>
+      <script src="kendo.data.kinvey.min.js"></script>
    </head>
    <body>
       <div id="grid"></div>
       <script>
-         const kinveyAppKey = "appkey";
-         const kinveyAppSecret = "appsecret";
+         const kinveyAppKey = "kid_HJWVDV4MZ";
+         const kinveyAppSecret = "42d97e67e01b41f585de1bc5f115a07d";
          
-         const email = "username";
-         const password = "password";
+         const email = "1111";
+         const password = "1111";
          
          Kinvey.init({
              appKey: kinveyAppKey,
              appSecret: kinveyAppSecret
          });
          
-         var collectionName = "books";
+         var collectionName = "booksdemo";
         
          var dataStore = Kinvey.DataStore.collection(collectionName, Kinvey.DataStoreType.Network); 
-         // TODO: possible bug in the Cache store when you've created an item and subsequent saves are stating -  "data is being pushed to the backend"
          
          var activeUser = Kinvey.User.getActiveUser();
          if (activeUser !== null) {
@@ -71,8 +70,8 @@
          var dataSourceOptions = {
              type: "kinvey",
              transport: {
-                // typeName: collectionName
-                 dataStore: dataStore
+                 typeName: collectionName
+                // dataStore: dataStore
              },
              schema: {
                  model: {
@@ -83,22 +82,10 @@
                  alert(JSON.stringify(err));
              },
              serverPaging: true,
-             pageSize: 37,
+             pageSize: 5,
              serverFiltering: true,
              filter: {
-                 field: "author", operator: "eq", value: "FD"
-                 // logic: "or",
-                 // filters: [{
-                 //     field: "author",
-                 //     operator: "neq",
-                 //     value: "f"
-                 // },
-                 // {
-                 //     field: "title",
-                 //     operator: "neq",
-                 //     value: "shm"
-                 // }
-                 // ]
+                 field: "author", operator: "neq", value: "someauthor"
              },
              serverSorting: true,
              sort: {
@@ -140,6 +127,7 @@
                  width: "120px"
              }, {
                  field: "review",
+                 title: "Review notes",
                  width: "220px"
              },
              {

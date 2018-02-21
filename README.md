@@ -18,9 +18,10 @@ You can choose between several ways of sourcing the Kinvey flavor of Kendo UI Da
 
 ### <!--Online Copy-->
 
-<!--For easy setup, you can directly reference the SDK from a Content Delivery Network (CDN).-->
-
+<!--For easy setup, you can directly reference the SDK from a Content Delivery Network (CDN).
 ???Instructions?
+-->
+
 
 > <!--For production apps, we recommend that you install a local copy of the package inside your application. Doing so ensures that the SDK will instantiate even without a network connection.-->
 

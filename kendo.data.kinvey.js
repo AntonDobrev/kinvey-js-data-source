@@ -272,7 +272,7 @@
                             };
                             break;
                         case "isin":
-                            if(!isArray(currentKendoFilterValue)) {
+                            if (!isArray(currentKendoFilterValue)) {
                                 currentKendoFilterValue = [currentKendoFilterValue]
                             }
                             currentKinveyFilter[currentKendoFilterFieldName] = {
@@ -280,13 +280,13 @@
                             };
                             break;
                         case "isnotin":
-                            if(!isArray(currentKendoFilterValue)) {
+                            if (!isArray(currentKendoFilterValue)) {
                                 currentKendoFilterValue = [currentKendoFilterValue]
                             }
                             currentKinveyFilter[currentKendoFilterFieldName] = {
                                 "$nin": currentKendoFilterValue
                             };
-                            break; 
+                            break;
                         default:
                             throw new Error("Unsupported filtering operator: " + currentKendoFilterOperator);
                     }

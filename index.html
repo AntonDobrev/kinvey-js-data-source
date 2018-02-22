@@ -10,7 +10,7 @@
       <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
       <script src="https://kendo.cdn.telerik.com/2017.2.621/js/kendo.all.min.js"></script>
       <script src="https://da189i1jfloii.cloudfront.net/js/kinvey-phonegap-sdk-3.9.3.min.js"></script>
-      <script src="kendo.data.kinvey.min.js"></script>
+      <script src="kendo.data.kinvey.js"></script>
    </head>
    <body>
       <div id="grid"></div>
@@ -28,7 +28,7 @@
          
          var collectionName = "booksdemo";
         
-         var dataStore = Kinvey.DataStore.collection(collectionName, Kinvey.DataStoreType.Network); 
+     var dataStore = Kinvey.DataStore.collection(collectionName, Kinvey.DataStoreType.Network); 
          
          var activeUser = Kinvey.User.getActiveUser();
          if (activeUser !== null) {
@@ -48,7 +48,7 @@
                  init();
              });
          } else {
-             alert("No active user, please sign in");
+             alert("No active user, signing in");
          
              Kinvey.User.login({
                  username: email,
@@ -70,8 +70,8 @@
          var dataSourceOptions = {
              type: "kinvey",
              transport: {
-                 typeName: collectionName
-                // dataStore: dataStore
+               //  typeName: collectionName
+                 dataStore: dataStore
              },
              schema: {
                  model: {
@@ -81,13 +81,13 @@
              error: function (err) {
                  alert(JSON.stringify(err));
              },
-             serverPaging: true,
-             pageSize: 5,
-             serverFiltering: true,
+              serverPaging: true,
+              pageSize: 5,
+            serverFiltering: true,
              filter: {
                  field: "author", operator: "neq", value: "someauthor"
              },
-             serverSorting: true,
+            // serverSorting: true,
              sort: {
                  field: "title",
                  dir: "asc"
@@ -102,12 +102,6 @@
          
          function successHandler() {
          $("#grid").kendoGrid({
-             remove: function (e) {
-                 _id = e.model._id
-             },
-             save: function (e) {
-                 _id = e.model._id
-             },
              toolbar: ["create"],
              dataSource: dataSource,
              editable: "inline",
